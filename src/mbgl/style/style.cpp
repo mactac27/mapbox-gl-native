@@ -1,6 +1,7 @@
 #include <mbgl/style/style.hpp>
 #include <mbgl/style/observer.hpp>
 #include <mbgl/style/source.hpp>
+#include <mbgl/style/source_impl.hpp>
 #include <mbgl/style/layers/symbol_layer.hpp>
 #include <mbgl/style/layers/symbol_layer_impl.hpp>
 #include <mbgl/style/layers/custom_layer.hpp>
@@ -47,7 +48,7 @@ Style::Style(FileSource& fileSource_, float pixelRatio)
 
 Style::~Style() {
     for (const auto& source : sources) {
-        source->setObserver(nullptr);
+        source->baseImpl->setObserver(nullptr);
     }
 
     glyphStore->setObserver(nullptr);
@@ -107,7 +108,7 @@ void Style::setJSON(const std::string& json) {
 }
 
 void Style::addSource(std::unique_ptr<Source> source) {
-    source->setObserver(this);
+    source->baseImpl->setObserver(this);
     sources.emplace_back(std::move(source));
 }
 
@@ -156,7 +157,7 @@ void Style::update(const UpdateParameters& parameters) {
     bool allTilesUpdated = true;
 
     for (const auto& source : sources) {
-        if (!source->update(parameters)) {
+        if (!source->baseImpl->update(parameters)) {
             allTilesUpdated = false;
         }
     }
@@ -195,7 +196,7 @@ void Style::cascade(const TimePoint& timePoint, MapMode mode) {
 
 void Style::recalculate(float z, const TimePoint& timePoint, MapMode mode) {
     for (const auto& source : sources) {
-        source->enabled = false;
+        source->baseImpl->enabled = false;
     }
 
     zoomHistory.update(z, timePoint);
@@ -213,9 +214,9 @@ void Style::recalculate(float z, const TimePoint& timePoint, MapMode mode) {
 
         Source* source = getSource(layer->baseImpl->source);
         if (source && layer->baseImpl->needsRendering()) {
-            source->enabled = true;
-            if (!source->loaded && !source->isLoading()) {
-                source->load(fileSource);
+            source->baseImpl->enabled = true;
+            if (!source->baseImpl->loaded && !source->baseImpl->isLoading()) {
+                source->baseImpl->load(fileSource);
             }
         }
     }
@@ -223,7 +224,7 @@ void Style::recalculate(float z, const TimePoint& timePoint, MapMode mode) {
 
 Source* Style::getSource(const std::string& id) const {
     const auto it = std::find_if(sources.begin(), sources.end(), [&](const auto& source) {
-        return source->id == id;
+        return source->getID() == id;
     });
 
     return it != sources.end() ? it->get() : nullptr;
@@ -239,7 +240,7 @@ bool Style::isLoaded() const {
     }
 
     for (const auto& source: sources) {
-        if (source->enabled && !source->isLoaded()) return false;
+        if (source->baseImpl->enabled && !source->baseImpl->isLoaded()) return false;
     }
 
     if (!spriteStore->isLoaded()) {
@@ -253,7 +254,7 @@ RenderData Style::getRenderData() const {
     RenderData result;
 
     for (const auto& source : sources) {
-        if (source->enabled) {
+        if (source->baseImpl->enabled) {
             result.sources.insert(source.get());
         }
     }
@@ -289,7 +290,7 @@ RenderData Style::getRenderData() const {
             continue;
         }
 
-        for (auto& pair : source->getTiles()) {
+        for (auto& pair : source->baseImpl->getTiles()) {
             auto& tile = pair.second;
             if (!tile.data.isRenderable()) {
                 continue;
@@ -328,7 +329,7 @@ std::vector<Feature> Style::queryRenderedFeatures(const QueryParameters& paramet
     std::unordered_map<std::string, std::vector<Feature>> resultsByLayer;
 
     for (const auto& source : sources) {
-        auto sourceResults = source->queryRenderedFeatures(parameters);
+        auto sourceResults = source->baseImpl->queryRenderedFeatures(parameters);
         std::move(sourceResults.begin(), sourceResults.end(), std::inserter(resultsByLayer, resultsByLayer.begin()));
     }
 
@@ -356,13 +357,13 @@ float Style::getQueryRadius() const {
 
 void Style::setSourceTileCacheSize(size_t size) {
     for (const auto& source : sources) {
-        source->setCacheSize(size);
+        source->baseImpl->setCacheSize(size);
     }
 }
 
 void Style::onLowMemory() {
     for (const auto& source : sources) {
-        source->onLowMemory();
+        source->baseImpl->onLowMemory();
     }
 }
 
@@ -392,7 +393,7 @@ void Style::onSourceLoaded(Source& source) {
 void Style::onSourceError(Source& source, std::exception_ptr error) {
     lastError = error;
     Log::Error(Event::Style, "Failed to load source %s: %s",
-               source.id.c_str(), util::toString(error).c_str());
+               source.getID().c_str(), util::toString(error).c_str());
     observer->onSourceError(source, error);
     observer->onResourceError(error);
 }
@@ -409,7 +410,7 @@ void Style::onTileLoaded(Source& source, const OverscaledTileID& tileID, bool is
 void Style::onTileError(Source& source, const OverscaledTileID& tileID, std::exception_ptr error) {
     lastError = error;
     Log::Error(Event::Style, "Failed to load tile %s for source %s: %s",
-               util::toString(tileID).c_str(), source.id.c_str(), util::toString(error).c_str());
+               util::toString(tileID).c_str(), source.getID().c_str(), util::toString(error).c_str());
     observer->onTileError(source, tileID, error);
     observer->onResourceError(error);
 }
@@ -433,7 +434,7 @@ void Style::onSpriteError(std::exception_ptr error) {
 
 void Style::dumpDebugLogs() const {
     for (const auto& source : sources) {
-        source->dumpDebugLogs();
+        source->baseImpl->dumpDebugLogs();
     }
 
     spriteStore->dumpDebugLogs();

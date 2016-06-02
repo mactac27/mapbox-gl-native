@@ -1,9 +1,9 @@
 #pragma once
 
+#include <mbgl/style/source.hpp>
 #include <mbgl/tile/tile_id.hpp>
 #include <mbgl/tile/tile_data.hpp>
 #include <mbgl/tile/tile_cache.hpp>
-#include <mbgl/style/types.hpp>
 
 #include <mbgl/util/mat4.hpp>
 #include <mbgl/util/rapidjson.hpp>
@@ -30,16 +30,17 @@ class UpdateParameters;
 class QueryParameters;
 class SourceObserver;
 
-class Source : private util::noncopyable {
+class Source::Impl : private util::noncopyable {
 protected:
-    Source(SourceType,
-           const std::string& id,
-           const std::string& url,
-           uint16_t tileSize,
-           std::unique_ptr<Tileset>&&);
+    Impl(Source&,
+         SourceType,
+         const std::string& id,
+         const std::string& url,
+         uint16_t tileSize,
+         std::unique_ptr<Tileset>&&);
 
 public:
-    virtual ~Source();
+    virtual ~Impl();
 
     bool loaded = false;
     void load(FileSource&);
@@ -85,6 +86,8 @@ protected:
     using TileLoadingCallback = std::function<void (std::exception_ptr)>;
 
     std::unique_ptr<const Tileset> tileset;
+
+    Source& source;
     SourceObserver* observer = nullptr;
 
 private:

@@ -6,6 +6,7 @@
 
 #include <mbgl/util/rapidjson.hpp>
 #include <mbgl/util/font_stack.hpp>
+#include <mbgl/util/tileset.hpp>
 
 #include <vector>
 #include <memory>

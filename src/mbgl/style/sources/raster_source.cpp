@@ -1,6 +1,5 @@
 #include <mbgl/style/sources/raster_source.hpp>
-#include <mbgl/style/update_parameters.hpp>
-#include <mbgl/tile/raster_tile_data.hpp>
+#include <mbgl/style/sources/raster_source_impl.hpp>
 
 namespace mbgl {
 namespace style {
@@ -9,20 +8,12 @@ RasterSource::RasterSource(const std::string& id,
                            const std::string& url,
                            std::unique_ptr<Tileset> tileset,
                            uint16_t tileSize)
-    : Source(SourceType::Raster, id, url, tileSize, std::move(tileset)) {
+    : Source(SourceType::Raster, std::make_unique<Impl>(*this, id, url, std::move(tileset), tileSize)) {
 }
 
-std::unique_ptr<TileData> RasterSource::createTile(const OverscaledTileID& overscaledTileID,
-                                                   const UpdateParameters& parameters,
-                                                   const TileLoadingCallback& callback) {
-    return std::make_unique<RasterTileData>(
-        overscaledTileID,
-        parameters.pixelRatio,
-        tileset->tiles.at(0),
-        parameters.texturePool,
-        parameters.worker,
-        parameters.fileSource,
-        callback);
+template <>
+bool Source::is<RasterSource>() const {
+    return type == SourceType::Raster;
 }
 
 } // namespace style

@@ -108,7 +108,6 @@ void AnnotationManager::updateStyle(Style& style) {
     // Create annotation source, point layer, and point bucket
     if (!style.getSource(SourceID)) {
         std::unique_ptr<Source> source = std::make_unique<AnnotationSource>();
-        source->enabled = true;
         style.addSource(std::move(source));
 
         std::unique_ptr<SymbolLayer> layer = std::make_unique<SymbolLayer>(PointLayerID);

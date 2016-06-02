@@ -3,6 +3,7 @@
 #include <mbgl/test/stub_style_observer.hpp>
 
 #include <mbgl/style/source.hpp>
+#include <mbgl/style/source_impl.hpp>
 #include <mbgl/util/run_loop.hpp>
 #include <mbgl/util/string.hpp>
 #include <mbgl/util/io.hpp>
@@ -78,14 +79,14 @@ TEST(Source, LoadingFail) {
     };
 
     test.observer.sourceError = [&] (Source& source, std::exception_ptr error) {
-        EXPECT_EQ("url", source.url);
+        EXPECT_EQ("url", source.baseImpl->url);
         EXPECT_EQ("Failed by the test case", util::toString(error));
         test.end();
     };
 
     VectorSource source("source", "url", nullptr);
-    source.setObserver(&test.observer);
-    source.load(test.fileSource);
+    source.baseImpl->setObserver(&test.observer);
+    source.baseImpl->load(test.fileSource);
 
     test.run();
 }
@@ -101,14 +102,14 @@ TEST(Source, LoadingCorrupt) {
     };
 
     test.observer.sourceError = [&] (Source& source, std::exception_ptr error) {
-        EXPECT_EQ("url", source.url);
+        EXPECT_EQ("url", source.baseImpl->url);
         EXPECT_EQ("0 - Invalid value.", util::toString(error));
         test.end();
     };
 
     VectorSource source("source", "url", nullptr);
-    source.setObserver(&test.observer);
-    source.load(test.fileSource);
+    source.baseImpl->setObserver(&test.observer);
+    source.baseImpl->load(test.fileSource);
 
     test.run();
 }
@@ -123,7 +124,7 @@ TEST(Source, RasterTileEmpty) {
     };
 
     test.observer.tileLoaded = [&] (Source& source, const OverscaledTileID&, bool) {
-        EXPECT_EQ("source", source.id);
+        EXPECT_EQ("source", source.getID());
         test.end();
     };
 
@@ -135,9 +136,9 @@ TEST(Source, RasterTileEmpty) {
     tileset->tiles = { "tiles" };
 
     RasterSource source("source", "", std::move(tileset), 512);
-    source.setObserver(&test.observer);
-    source.load(test.fileSource);
-    source.update(test.updateParameters);
+    source.baseImpl->setObserver(&test.observer);
+    source.baseImpl->load(test.fileSource);
+    source.baseImpl->update(test.updateParameters);
 
     test.run();
 }
@@ -152,7 +153,7 @@ TEST(Source, VectorTileEmpty) {
     };
 
     test.observer.tileLoaded = [&] (Source& source, const OverscaledTileID&, bool) {
-        EXPECT_EQ("source", source.id);
+        EXPECT_EQ("source", source.getID());
         test.end();
     };
 
@@ -164,9 +165,9 @@ TEST(Source, VectorTileEmpty) {
     tileset->tiles = { "tiles" };
 
     VectorSource source("source", "", std::move(tileset));
-    source.setObserver(&test.observer);
-    source.load(test.fileSource);
-    source.update(test.updateParameters);
+    source.baseImpl->setObserver(&test.observer);
+    source.baseImpl->load(test.fileSource);
+    source.baseImpl->update(test.updateParameters);
 
     test.run();
 }
@@ -183,7 +184,7 @@ TEST(Source, RasterTileFail) {
     };
 
     test.observer.tileError = [&] (Source& source, const OverscaledTileID& tileID, std::exception_ptr error) {
-        EXPECT_EQ(SourceType::Raster, source.type);
+        EXPECT_TRUE(source.is<RasterSource>());
         EXPECT_EQ(OverscaledTileID(0, 0, 0), tileID);
         EXPECT_EQ("Failed by the test case", util::toString(error));
         test.end();
@@ -193,9 +194,9 @@ TEST(Source, RasterTileFail) {
     tileset->tiles = { "tiles" };
 
     RasterSource source("source", "", std::move(tileset), 512);
-    source.setObserver(&test.observer);
-    source.load(test.fileSource);
-    source.update(test.updateParameters);
+    source.baseImpl->setObserver(&test.observer);
+    source.baseImpl->load(test.fileSource);
+    source.baseImpl->update(test.updateParameters);
 
     test.run();
 }
@@ -212,7 +213,7 @@ TEST(Source, VectorTileFail) {
     };
 
     test.observer.tileError = [&] (Source& source, const OverscaledTileID& tileID, std::exception_ptr error) {
-        EXPECT_EQ(SourceType::Vector, source.type);
+        EXPECT_TRUE(source.is<VectorSource>());
         EXPECT_EQ(OverscaledTileID(0, 0, 0), tileID);
         EXPECT_EQ("Failed by the test case", util::toString(error));
         test.end();
@@ -222,9 +223,9 @@ TEST(Source, VectorTileFail) {
     tileset->tiles = { "tiles" };
 
     VectorSource source("source", "", std::move(tileset));
-    source.setObserver(&test.observer);
-    source.load(test.fileSource);
-    source.update(test.updateParameters);
+    source.baseImpl->setObserver(&test.observer);
+    source.baseImpl->load(test.fileSource);
+    source.baseImpl->update(test.updateParameters);
 
     test.run();
 }
@@ -239,7 +240,7 @@ TEST(Source, RasterTileCorrupt) {
     };
 
     test.observer.tileError = [&] (Source& source, const OverscaledTileID& tileID, std::exception_ptr error) {
-        EXPECT_EQ(source.type, SourceType::Raster);
+        EXPECT_TRUE(source.is<RasterSource>());
         EXPECT_EQ(OverscaledTileID(0, 0, 0), tileID);
         EXPECT_TRUE(bool(error));
         // Not asserting on platform-specific error text.
@@ -250,9 +251,9 @@ TEST(Source, RasterTileCorrupt) {
     tileset->tiles = { "tiles" };
 
     RasterSource source("source", "", std::move(tileset), 512);
-    source.setObserver(&test.observer);
-    source.load(test.fileSource);
-    source.update(test.updateParameters);
+    source.baseImpl->setObserver(&test.observer);
+    source.baseImpl->load(test.fileSource);
+    source.baseImpl->update(test.updateParameters);
 
     test.run();
 }
@@ -267,7 +268,7 @@ TEST(Source, VectorTileCorrupt) {
     };
 
     test.observer.tileError = [&] (Source& source, const OverscaledTileID& tileID, std::exception_ptr error) {
-        EXPECT_EQ(source.type, SourceType::Vector);
+        EXPECT_TRUE(source.is<VectorSource>());
         EXPECT_EQ(OverscaledTileID(0, 0, 0), tileID);
         EXPECT_EQ(util::toString(error), "unknown pbf field type exception");
         test.end();
@@ -282,9 +283,9 @@ TEST(Source, VectorTileCorrupt) {
     tileset->tiles = { "tiles" };
 
     VectorSource source("source", "", std::move(tileset));
-    source.setObserver(&test.observer);
-    source.load(test.fileSource);
-    source.update(test.updateParameters);
+    source.baseImpl->setObserver(&test.observer);
+    source.baseImpl->load(test.fileSource);
+    source.baseImpl->update(test.updateParameters);
 
     test.run();
 }
@@ -309,9 +310,9 @@ TEST(Source, RasterTileCancel) {
     tileset->tiles = { "tiles" };
 
     RasterSource source("source", "", std::move(tileset), 512);
-    source.setObserver(&test.observer);
-    source.load(test.fileSource);
-    source.update(test.updateParameters);
+    source.baseImpl->setObserver(&test.observer);
+    source.baseImpl->load(test.fileSource);
+    source.baseImpl->update(test.updateParameters);
 
     test.run();
 }
@@ -336,9 +337,9 @@ TEST(Source, VectorTileCancel) {
     tileset->tiles = { "tiles" };
 
     VectorSource source("source", "", std::move(tileset));
-    source.setObserver(&test.observer);
-    source.load(test.fileSource);
-    source.update(test.updateParameters);
+    source.baseImpl->setObserver(&test.observer);
+    source.baseImpl->load(test.fileSource);
+    source.baseImpl->update(test.updateParameters);
 
     test.run();
 }

@@ -1,12 +1,12 @@
 #include <mbgl/renderer/painter.hpp>
 
-#include <mbgl/style/source.hpp>
 #include <mbgl/tile/tile.hpp>
 
 #include <mbgl/platform/log.hpp>
 #include <mbgl/gl/debugging.hpp>
 
 #include <mbgl/style/style.hpp>
+#include <mbgl/style/source_impl.hpp>
 #include <mbgl/style/layer_impl.hpp>
 
 #include <mbgl/style/layers/background_layer.hpp>
@@ -161,11 +161,12 @@ void Painter::render(const Style& style, const FrameData& frame_, SpriteAtlas& a
         // Update all clipping IDs.
         algorithm::ClipIDGenerator generator;
         for (const auto& source : sources) {
-            if (source->type == SourceType::Vector || source->type == SourceType::GeoJSON ||
-                source->type == SourceType::Annotations) {
-                source->updateClipIDs(generator);
+            if (source->baseImpl->type == SourceType::Vector ||
+                source->baseImpl->type == SourceType::GeoJSON ||
+                source->baseImpl->type == SourceType::Annotations) {
+                source->baseImpl->updateClipIDs(generator);
             }
-            source->updateMatrices(projMatrix, state);
+            source->baseImpl->updateMatrices(projMatrix, state);
         }
 
         drawClippingMasks(generator.getStencils());
@@ -206,7 +207,7 @@ void Painter::render(const Style& style, const FrameData& frame_, SpriteAtlas& a
         // When only rendering layers via the stylesheet, it's possible that we don't
         // ever visit a tile during rendering.
         for (const auto& source : sources) {
-            source->finishRender(*this);
+            source->baseImpl->finishRender(*this);
         }
     }
 
