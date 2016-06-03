@@ -14,9 +14,9 @@
 #include <mbgl/style/style.hpp>
 #include <mbgl/style/update_parameters.hpp>
 #include <mbgl/style/layers/line_layer.hpp>
+#include <mbgl/style/sources/vector_source.hpp>
+#include <mbgl/style/sources/raster_source.hpp>
 #include <mbgl/annotation/annotation_manager.hpp>
-
-#include <mapbox/geojsonvt.hpp>
 
 using namespace mbgl;
 
@@ -83,7 +83,7 @@ TEST(Source, LoadingFail) {
         test.end();
     };
 
-    Source source(SourceType::Vector, "source", "url", 512, nullptr, nullptr);
+    VectorSource source("source", "url", nullptr);
     source.setObserver(&test.observer);
     source.load(test.fileSource);
 
@@ -106,7 +106,7 @@ TEST(Source, LoadingCorrupt) {
         test.end();
     };
 
-    Source source(SourceType::Vector, "source", "url", 512, nullptr, nullptr);
+    VectorSource source("source", "url", nullptr);
     source.setObserver(&test.observer);
     source.load(test.fileSource);
 
@@ -134,7 +134,7 @@ TEST(Source, RasterTileEmpty) {
     auto tileset = std::make_unique<Tileset>();
     tileset->tiles = { "tiles" };
 
-    Source source(SourceType::Raster, "source", "", 512, std::move(tileset), nullptr);
+    RasterSource source("source", "", std::move(tileset), 512);
     source.setObserver(&test.observer);
     source.load(test.fileSource);
     source.update(test.updateParameters);
@@ -163,7 +163,7 @@ TEST(Source, VectorTileEmpty) {
     auto tileset = std::make_unique<Tileset>();
     tileset->tiles = { "tiles" };
 
-    Source source(SourceType::Vector, "source", "", 512, std::move(tileset), nullptr);
+    VectorSource source("source", "", std::move(tileset));
     source.setObserver(&test.observer);
     source.load(test.fileSource);
     source.update(test.updateParameters);
@@ -192,7 +192,7 @@ TEST(Source, RasterTileFail) {
     auto tileset = std::make_unique<Tileset>();
     tileset->tiles = { "tiles" };
 
-    Source source(SourceType::Raster, "source", "", 512, std::move(tileset), nullptr);
+    RasterSource source("source", "", std::move(tileset), 512);
     source.setObserver(&test.observer);
     source.load(test.fileSource);
     source.update(test.updateParameters);
@@ -221,7 +221,7 @@ TEST(Source, VectorTileFail) {
     auto tileset = std::make_unique<Tileset>();
     tileset->tiles = { "tiles" };
 
-    Source source(SourceType::Vector, "source", "", 512, std::move(tileset), nullptr);
+    VectorSource source("source", "", std::move(tileset));
     source.setObserver(&test.observer);
     source.load(test.fileSource);
     source.update(test.updateParameters);
@@ -249,7 +249,7 @@ TEST(Source, RasterTileCorrupt) {
     auto tileset = std::make_unique<Tileset>();
     tileset->tiles = { "tiles" };
 
-    Source source(SourceType::Raster, "source", "", 512, std::move(tileset), nullptr);
+    RasterSource source("source", "", std::move(tileset), 512);
     source.setObserver(&test.observer);
     source.load(test.fileSource);
     source.update(test.updateParameters);
@@ -281,7 +281,7 @@ TEST(Source, VectorTileCorrupt) {
     auto tileset = std::make_unique<Tileset>();
     tileset->tiles = { "tiles" };
 
-    Source source(SourceType::Vector, "source", "", 512, std::move(tileset), nullptr);
+    VectorSource source("source", "", std::move(tileset));
     source.setObserver(&test.observer);
     source.load(test.fileSource);
     source.update(test.updateParameters);
@@ -308,7 +308,7 @@ TEST(Source, RasterTileCancel) {
     auto tileset = std::make_unique<Tileset>();
     tileset->tiles = { "tiles" };
 
-    Source source(SourceType::Raster, "source", "", 512, std::move(tileset), nullptr);
+    RasterSource source("source", "", std::move(tileset), 512);
     source.setObserver(&test.observer);
     source.load(test.fileSource);
     source.update(test.updateParameters);
@@ -335,7 +335,7 @@ TEST(Source, VectorTileCancel) {
     auto tileset = std::make_unique<Tileset>();
     tileset->tiles = { "tiles" };
 
-    Source source(SourceType::Vector, "source", "", 512, std::move(tileset), nullptr);
+    VectorSource source("source", "", std::move(tileset));
     source.setObserver(&test.observer);
     source.load(test.fileSource);
     source.update(test.updateParameters);

@@ -13,14 +13,6 @@ enum class SourceType : uint8_t {
     Annotations
 };
 
-MBGL_DEFINE_ENUM_CLASS(SourceTypeClass, SourceType, {
-    { SourceType::Vector, "vector" },
-    { SourceType::Raster, "raster" },
-    { SourceType::GeoJSON, "geojson" },
-    { SourceType::Video, "video" },
-    { SourceType::Annotations, "annotations" },
-});
-
 namespace style {
 
 enum class VisibilityType : bool {

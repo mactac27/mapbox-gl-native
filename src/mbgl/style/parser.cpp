@@ -6,11 +6,11 @@
 #include <mbgl/style/layers/symbol_layer.hpp>
 #include <mbgl/style/layers/raster_layer.hpp>
 #include <mbgl/style/layers/background_layer.hpp>
+#include <mbgl/style/sources/vector_source.hpp>
+#include <mbgl/style/sources/raster_source.hpp>
+#include <mbgl/style/sources/geojson_source.hpp>
 
 #include <mbgl/platform/log.hpp>
-
-#include <mapbox/geojsonvt.hpp>
-#include <mapbox/geojsonvt/convert.hpp>
 
 #include <mbgl/tile/geometry_tile.hpp>
 #include <mbgl/util/mapbox.hpp>
@@ -165,98 +165,50 @@ void Parser::parseSources(const JSValue& value) {
             continue;
         }
 
-        const auto type = SourceTypeClass({ typeVal.GetString(), typeVal.GetStringLength() });
+        const std::string id { nameVal.GetString(), nameVal.GetStringLength() };
+        const std::string type { typeVal.GetString(), typeVal.GetStringLength() };
+
+        uint16_t tileSize = util::tileSize;
+        if (sourceVal.HasMember("tileSize")) {
+            const JSValue& tileSizeVal = sourceVal["tileSize"];
+            if (tileSizeVal.IsNumber() && tileSizeVal.GetUint64() <= std::numeric_limits<uint16_t>::max()) {
+                tileSize = tileSizeVal.GetUint64();
+            } else {
+                Log::Error(Event::ParseStyle, "invalid tileSize");
+                continue;
+            }
+        }
 
         // Sources can have URLs, either because they reference an external TileJSON file, or
         // because reference a GeoJSON file. They don't have to have one though when all source
         // parameters are specified inline.
         std::string url;
-
-        uint16_t tileSize = util::tileSize;
-
-        std::unique_ptr<Tileset> tileset;
-        std::unique_ptr<mapbox::geojsonvt::GeoJSONVT> geojsonvt;
-
-        switch (type) {
-        case SourceType::Raster:
-            if (sourceVal.HasMember("tileSize")) {
-                const JSValue& tileSizeVal = sourceVal["tileSize"];
-                if (tileSizeVal.IsNumber() && tileSizeVal.GetUint64() <= std::numeric_limits<uint16_t>::max()) {
-                    tileSize = tileSizeVal.GetUint64();
-                } else {
-                    Log::Error(Event::ParseStyle, "invalid tileSize");
-                    continue;
-                }
-            }
-            // Fall through. Vector sources are forbidden from having a tileSize.
-
-        case SourceType::Vector:
-            if (sourceVal.HasMember("url")) {
-                const JSValue& urlVal = sourceVal["url"];
-                if (urlVal.IsString()) {
-                    url = { urlVal.GetString(), urlVal.GetStringLength() };
-                } else {
-                    Log::Error(Event::ParseStyle, "source url must be a string");
-                    continue;
-                }
+        if (sourceVal.HasMember("url")) {
+            const JSValue& urlVal = sourceVal["url"];
+            if (urlVal.IsString()) {
+                url = { urlVal.GetString(), urlVal.GetStringLength() };
             } else {
-                tileset = parseTileJSON(sourceVal);
-            }
-            break;
-
-        case SourceType::GeoJSON:
-            tileset = std::make_unique<Tileset>();
-
-            // We should probably split this up to have URLs in the url property, and actual data
-            // in the data property. Until then, we're going to detect the content based on the
-            // object type.
-            if (sourceVal.HasMember("data")) {
-                const JSValue& dataVal = sourceVal["data"];
-                if (dataVal.IsString()) {
-                    // We need to load an external GeoJSON file
-                    url = { dataVal.GetString(), dataVal.GetStringLength() };
-                } else if (dataVal.IsObject()) {
-                    // We need to parse dataVal as a GeoJSON object
-                    geojsonvt = parseGeoJSON(dataVal);
-                    tileset->maxZoom = geojsonvt->options.maxZoom;
-                } else {
-                    Log::Error(Event::ParseStyle, "GeoJSON data must be a URL or an object");
-                    continue;
-                }
-            } else {
-                Log::Error(Event::ParseStyle, "GeoJSON source must have a data value");
+                Log::Error(Event::ParseStyle, "source url must be a string");
                 continue;
             }
-
-            break;
-
-        default:
-            Log::Error(Event::ParseStyle, "source type '%s' is not supported", typeVal.GetString());
-            continue;
         }
 
-        const std::string id { nameVal.GetString(), nameVal.GetStringLength() };
-        std::unique_ptr<Source> source = std::make_unique<Source>(type, id, url, tileSize, std::move(tileset), std::move(geojsonvt));
+        std::unique_ptr<Source> source;
 
-        sourcesMap.emplace(id, source.get());
-        sources.emplace_back(std::move(source));
-    }
-}
+        if (type == "vector") {
+            source = std::make_unique<VectorSource>(id, url, url.empty() ? parseTileJSON(sourceVal) : nullptr);
+        } else if (type == "raster") {
+            source = std::make_unique<RasterSource>(id, url, url.empty() ? parseTileJSON(sourceVal) : nullptr, tileSize);
+        } else if (type == "geojson") {
+            source = parseGeoJSONSource(id, sourceVal);
+        } else {
+            Log::Error(Event::ParseStyle, "source type '%s' is not supported", typeVal.GetString());
+        }
 
-std::unique_ptr<mapbox::geojsonvt::GeoJSONVT> parseGeoJSON(const JSValue& value) {
-    using namespace mapbox::geojsonvt;
-
-    Options options;
-    options.buffer = util::EXTENT / util::tileSize * 128;
-    options.extent = util::EXTENT;
-
-    try {
-        return std::make_unique<GeoJSONVT>(Convert::convert(value, 0), options);
-    } catch (const std::exception& ex) {
-        Log::Error(Event::ParseStyle, "Failed to parse GeoJSON data: %s", ex.what());
-        // Create an empty GeoJSON VT object to make sure we're not infinitely waiting for
-        // tiles to load.
-        return std::make_unique<GeoJSONVT>(std::vector<ProjectedFeature>{}, options);
+        if (source) {
+            sourcesMap.emplace(id, source.get());
+            sources.emplace_back(std::move(source));
+        }
     }
 }
 

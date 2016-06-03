@@ -14,12 +14,6 @@
 #include <vector>
 #include <map>
 
-namespace mapbox {
-namespace geojsonvt {
-class GeoJSONVT;
-} // namespace geojsonvt
-} // namespace mapbox
-
 namespace mbgl {
 
 class Painter;
@@ -37,14 +31,15 @@ class QueryParameters;
 class SourceObserver;
 
 class Source : private util::noncopyable {
-public:
+protected:
     Source(SourceType,
            const std::string& id,
            const std::string& url,
            uint16_t tileSize,
-           std::unique_ptr<Tileset>&&,
-           std::unique_ptr<mapbox::geojsonvt::GeoJSONVT>&&);
-    ~Source();
+           std::unique_ptr<Tileset>&&);
+
+public:
+    virtual ~Source();
 
     bool loaded = false;
     void load(FileSource&);
@@ -86,15 +81,20 @@ public:
     uint16_t tileSize = util::tileSize;
     bool enabled = false;
 
+protected:
+    using TileLoadingCallback = std::function<void (std::exception_ptr)>;
+
+    std::unique_ptr<const Tileset> tileset;
+    SourceObserver* observer = nullptr;
+
 private:
+    virtual bool updateData(const std::string& data);
+    virtual std::unique_ptr<TileData> createTile(const OverscaledTileID&,
+                                                 const UpdateParameters&,
+                                                 const TileLoadingCallback&) = 0;
+
     void tileLoadingCallback(const OverscaledTileID&, std::exception_ptr, bool isNewTile);
 
-    std::unique_ptr<TileData> createTile(const OverscaledTileID&, const UpdateParameters&);
-
-private:
-    std::unique_ptr<const Tileset> tileset;
-
-    std::unique_ptr<mapbox::geojsonvt::GeoJSONVT> geojsonvt;
 
     // Stores the time when this source was most recently updated.
     TimePoint updated = TimePoint::min();
@@ -104,8 +104,6 @@ private:
     TileCache cache;
 
     std::unique_ptr<AsyncRequest> req;
-
-    SourceObserver* observer = nullptr;
 };
 
 } // namespace style
