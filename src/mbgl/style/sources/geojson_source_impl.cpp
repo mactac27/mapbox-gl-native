@@ -49,7 +49,7 @@ std::unique_ptr<GeoJSONSource> parseGeoJSONSource(const std::string& id,
         } else if (dataVal.IsObject()) {
             // We need to parse dataVal as a GeoJSON object
             geojsonvt = parseGeoJSON(dataVal);
-            tileset->maxZoom = geojsonvt->options.maxZoom;
+            tileset->zoomRange.max = geojsonvt->options.maxZoom;
         } else {
             Log::Error(Event::ParseStyle, "GeoJSON data must be a URL or an object");
             return nullptr;
@@ -89,7 +89,7 @@ bool GeoJSONSource::Impl::updateData(const std::string& data) {
     }
 
     geojsonvt = style::parseGeoJSON(d);
-    newTileset->maxZoom = geojsonvt->options.maxZoom;
+    newTileset->zoomRange.max = geojsonvt->options.maxZoom;
     tileset = std::move(newTileset);
 
     return true;
