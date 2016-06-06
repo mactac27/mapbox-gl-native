@@ -14,7 +14,12 @@ public:
          std::unique_ptr<Tileset>,
          uint16_t tileSize);
 
+    const Tileset* getTileset() const { return tileset.get(); }
+    std::unique_ptr<const Tileset> tileset;
+
 private:
+    virtual Range<uint8_t> getZoomRange() final;
+    bool updateData(const std::string&) final;
     std::unique_ptr<TileData> createTile(const OverscaledTileID&,
                                          const UpdateParameters&,
                                          const TileLoadingCallback&) final;

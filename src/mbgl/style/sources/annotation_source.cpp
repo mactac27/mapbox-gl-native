@@ -18,7 +18,7 @@ bool Source::is<AnnotationSource>() const {
 }
 
 AnnotationSource::Impl::Impl(Source& source)
-    : Source::Impl(source, SourceType::Annotations, AnnotationManager::SourceID, "", util::tileSize, std::make_unique<Tileset>()) {
+    : Source::Impl(source, SourceType::Annotations, AnnotationManager::SourceID, "", util::tileSize) {
     enabled = true;
 }
 

@@ -36,8 +36,7 @@ protected:
          SourceType,
          const std::string& id,
          const std::string& url,
-         uint16_t tileSize,
-         std::unique_ptr<Tileset>&&);
+         uint16_t tileSize);
 
 public:
     virtual ~Impl();
@@ -46,8 +45,6 @@ public:
     void load(FileSource&);
     bool isLoading() const;
     bool isLoaded() const;
-
-    const Tileset* getTileset() const { return tileset.get(); }
 
     // Request or parse all the tiles relevant for the "TransformState". This method
     // will return true if all the tiles were scheduled for updating of false if
@@ -85,13 +82,12 @@ public:
 protected:
     using TileLoadingCallback = std::function<void (std::exception_ptr)>;
 
-    std::unique_ptr<const Tileset> tileset;
-
     Source& source;
     SourceObserver* observer = nullptr;
 
 private:
-    virtual bool updateData(const std::string& data);
+    virtual Range<uint8_t> getZoomRange() = 0;
+    virtual bool updateData(const std::string& data) = 0;
     virtual std::unique_ptr<TileData> createTile(const OverscaledTileID&,
                                                  const UpdateParameters&,
                                                  const TileLoadingCallback&) = 0;

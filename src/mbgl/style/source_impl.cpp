@@ -18,7 +18,6 @@
 #include <mbgl/util/string.hpp>
 #include <mbgl/util/tile_cover.hpp>
 
-#include <mbgl/style/parser.hpp>
 #include <mbgl/gl/debugging.hpp>
 
 #include <mbgl/algorithm/update_renderables.hpp>
@@ -36,13 +35,11 @@ Source::Impl::Impl(Source& source_,
                    SourceType type_,
                    const std::string& id_,
                    const std::string& url_,
-                   uint16_t tileSize_,
-                   std::unique_ptr<Tileset>&& tileset_)
+                   uint16_t tileSize_)
     : type(type_),
       id(id_),
       url(url_),
       tileSize(tileSize_),
-      tileset(std::move(tileset_)),
       source(source_) {
 }
 
@@ -100,46 +97,6 @@ void Source::Impl::load(FileSource& fileSource) {
     });
 }
 
-bool Source::Impl::updateData(const std::string& data) {
-    // Base implementation for raster and vector sources.
-    bool reloadTiles = false;
-
-    std::unique_ptr<Tileset> newTileset;
-
-    // Create a new copy of the Tileset object that holds the base values we've parsed
-    // from the stylesheet. Then merge in the values parsed from the TileJSON we retrieved
-    // via the URL.
-    try {
-        newTileset = style::parseTileJSON(data, url, type, tileSize);
-    } catch (...) {
-        observer->onSourceError(source, std::current_exception());
-        return false;
-    }
-
-    // Check whether previous information specifies different tile
-    if (tileset && tileset->tiles != newTileset->tiles) {
-        reloadTiles = true;
-
-        // Tile size changed: We need to recalculate the tiles we need to load because we
-        // might have to load tiles for a different zoom level
-        // This is done automatically when we trigger the onSourceLoaded observer below.
-
-        // Min/Max zoom changed: We need to recalculate what tiles to load, if we have tiles
-        // loaded that are outside the new zoom range
-        // This is done automatically when we trigger the onSourceLoaded observer below.
-
-        // Attribution changed: We need to notify the embedding application that this
-        // changed. See https://github.com/mapbox/mapbox-gl-native/issues/2723
-        // This is not yet implemented.
-
-        // Center/bounds changed: We're not using these values currently
-    }
-
-    tileset = std::move(newTileset);
-
-    return reloadTiles;
-}
-
 void Source::Impl::updateMatrices(const mat4 &projMatrix, const TransformState &transform) {
     for (auto& pair : tiles) {
         auto& tile = pair.second;
@@ -170,6 +127,7 @@ TileData* Source::Impl::getTileData(const OverscaledTileID& overscaledTileID) co
 
 bool Source::Impl::update(const UpdateParameters& parameters) {
     bool allTilesUpdated = true;
+    Range<uint8_t> zoomRange = getZoomRange();
 
     if (!loaded || parameters.animationTime <= updated) {
         return allTilesUpdated;
@@ -180,8 +138,8 @@ bool Source::Impl::update(const UpdateParameters& parameters) {
     int32_t dataTileZoom = overscaledZoom;
 
     std::vector<UnwrappedTileID> idealTiles;
-    if (overscaledZoom >= tileset->zoomRange.min) {
-        int32_t idealZoom = std::min<int32_t>(tileset->zoomRange.max, overscaledZoom);
+    if (overscaledZoom >= zoomRange.min) {
+        int32_t idealZoom = std::min<int32_t>(zoomRange.max, overscaledZoom);
 
         // Make sure we're not reparsing overzoomed raster tiles.
         if (type == SourceType::Raster) {
@@ -221,7 +179,7 @@ bool Source::Impl::update(const UpdateParameters& parameters) {
 
     tiles.clear();
     algorithm::updateRenderables(getTileDataFn, createTileDataFn, retainTileDataFn, renderTileFn,
-                                 idealTiles, tileset->zoomRange, dataTileZoom);
+                                 idealTiles, zoomRange, dataTileZoom);
 
     if (type != SourceType::Raster && type != SourceType::Annotations && cache.getSize() == 0) {
         size_t conservativeCacheSize =

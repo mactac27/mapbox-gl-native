@@ -69,7 +69,7 @@ GeoJSONSource::Impl::Impl(Source& source_,
                           const std::string& url_,
                           std::unique_ptr<Tileset> tileset_,
                           std::unique_ptr<mapbox::geojsonvt::GeoJSONVT> geojsonvt_)
-    : Source::Impl(source_, SourceType::GeoJSON, id_, url_, util::tileSize, std::move(tileset_)),
+    : Source::Impl(source_, SourceType::GeoJSON, id_, url_, util::tileSize),
       geojsonvt(std::move(geojsonvt_)) {
 }
 
