@@ -164,4 +164,6 @@
     <string name="dynamic_marker_arsenal_title">Arsenal</string>
     <string name="dynamic_marker_arsenal_snippet">Emirates Stadium</string>
 
+    <string name="navigation_select_location_button_text">Select Location!</string>
+
 </resources>

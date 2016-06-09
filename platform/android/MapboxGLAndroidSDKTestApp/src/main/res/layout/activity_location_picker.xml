@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:orientation="vertical">
@@ -16,4 +16,16 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-</LinearLayout>
+    <Button
+        android:id="@+id/selectLocationButton"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/full_button_margin"
+        android:layout_marginRight="@dimen/full_button_margin"
+        android:layout_marginBottom="@dimen/full_button_margin"
+        android:background="@color/primary"
+        android:text="@string/navigation_select_location_button_text"
+        android:textColor="@android:color/white"
+        android:layout_gravity="bottom|center_horizontal"/>
+
+</FrameLayout>
