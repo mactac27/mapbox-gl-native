@@ -3387,12 +3387,14 @@ mbgl::Duration MGLDurationInSeconds(NSTimeInterval duration)
         MGLAnnotationContext &annotationContext = _annotationContextsByAnnotationTag.at(annotationTag);
         
         MGLAnnotationView *annotationView = annotationContext.annotationView;
-        if (annotationView)
+        if (annotationView && annotationView.enabled)
         {
             // Annotations represented by views use the view frame as the positioning rect.
             positioningRect = annotationView.frame;
             
             [annotationView.superview bringSubviewToFront:annotationView];
+            
+            annotationView.selected = YES;
         }
     }
     
@@ -3546,6 +3548,16 @@ mbgl::Duration MGLDurationInSeconds(NSTimeInterval duration)
     {
         // dismiss popup
         [self.calloutViewForSelectedAnnotation dismissCalloutAnimated:animated];
+        
+        // deselect annotation view
+        MGLAnnotationTag annotationTag = [self annotationTagForAnnotation:annotation];
+        if (annotationTag != MGLAnnotationTagNotFound)
+        {
+            MGLAnnotationContext &annotationContext = _annotationContextsByAnnotationTag.at(annotationTag);
+            MGLAnnotationView *annotationView = annotationContext.annotationView;
+            
+            annotationView.selected = NO;
+        }
 
         // clean up
         self.calloutViewForSelectedAnnotation = nil;
