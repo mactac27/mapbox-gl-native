@@ -8,7 +8,6 @@
 
 @interface MGLAnnotationView ()
 
-@property (nonatomic) id<MGLAnnotation> annotation;
 @property (nonatomic, readwrite, nullable) NSString *reuseIdentifier;
 
 @end
