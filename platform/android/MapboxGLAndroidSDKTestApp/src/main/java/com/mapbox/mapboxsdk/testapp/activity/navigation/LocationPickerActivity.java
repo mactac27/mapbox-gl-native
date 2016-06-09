@@ -4,7 +4,11 @@ import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.Gravity;
 import android.view.MenuItem;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
@@ -38,6 +42,12 @@ public class LocationPickerActivity extends AppCompatActivity {
                 mapboxMap = map;
             }
         });
+
+        final ImageView dropPinView = new ImageView(this);
+        dropPinView.setImageResource(R.drawable.default_marker);
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
+        dropPinView.setLayoutParams(params);
+        mapView.addView(dropPinView);
     }
     @Override
     public void onResume() {
