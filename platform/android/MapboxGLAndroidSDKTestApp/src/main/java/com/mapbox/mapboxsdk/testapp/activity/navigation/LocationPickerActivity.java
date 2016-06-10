@@ -18,6 +18,16 @@ import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.testapp.R;
+import com.mapbox.services.commons.ServicesException;
+import com.mapbox.services.commons.models.Position;
+import com.mapbox.services.geocoding.v5.GeocodingCriteria;
+import com.mapbox.services.geocoding.v5.MapboxGeocoding;
+import com.mapbox.services.geocoding.v5.models.GeocodingFeature;
+import com.mapbox.services.geocoding.v5.models.GeocodingResponse;
+import java.util.List;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class LocationPickerActivity extends AppCompatActivity {
 
@@ -68,11 +78,45 @@ public class LocationPickerActivity extends AppCompatActivity {
                             int y = dropPinView.getBottom();
                             LatLng latLng = mapboxMap.getProjection().fromScreenLocation(new PointF(x, y));
                             Log.i(TAG, "location:  x = " + x + "; y = " + y + "; latLng = " + latLng);
+                            geocode(latLng);
                         }
                     }
                 }
         );
     }
+
+    private void geocode(final LatLng point) {
+        try {
+            MapboxGeocoding client = new MapboxGeocoding.Builder()
+                    .setAccessToken(getString(R.string.mapbox_access_token))
+                    .setCoordinates(Position.fromCoordinates(point.getLongitude(), point.getLatitude()))
+                    .setType(GeocodingCriteria.TYPE_ADDRESS)
+                    .build();
+
+            client.enqueueCall(new Callback<GeocodingResponse>() {
+                @Override
+                public void onResponse(Call<GeocodingResponse> call, Response<GeocodingResponse> response) {
+
+                    List<GeocodingFeature> results = response.body().getFeatures();
+                    if (results.size() > 0) {
+                        String address = results.get(0).getPlaceName();
+                        Log.i(TAG, "address " + address);
+                    } else {
+                        Log.i(TAG, "No results for search.");
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<GeocodingResponse> call, Throwable t) {
+                    Log.e(TAG, "Geocoding Failure: " + t.getMessage());
+                }
+            });
+        } catch (ServicesException e) {
+            Log.e(TAG, "Error geocoding: " + e.toString());
+            e.printStackTrace();
+        }
+    }
+
 
     @Override
     public void onResume() {
