@@ -122,7 +122,8 @@ public class LocationPickerActivity extends AppCompatActivity {
 
                     List<GeocodingFeature> results = response.body().getFeatures();
                     if (results.size() > 0) {
-                        String address = results.get(0).getPlaceName();
+                        GeocodingFeature feature = results.get(0);
+                        String address = feature.getAddress() + " " + feature.getText();
                         Log.i(TAG, "address " + address);
                         showAddressPin(address);
                     } else {
