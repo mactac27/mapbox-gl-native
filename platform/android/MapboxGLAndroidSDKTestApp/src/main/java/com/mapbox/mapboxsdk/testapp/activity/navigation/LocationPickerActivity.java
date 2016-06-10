@@ -13,6 +13,8 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import com.mapbox.mapboxsdk.annotations.Marker;
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
@@ -20,6 +22,7 @@ import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.testapp.R;
 import com.mapbox.services.commons.ServicesException;
 import com.mapbox.services.commons.models.Position;
+import com.mapbox.services.commons.utils.TextUtils;
 import com.mapbox.services.geocoding.v5.GeocodingCriteria;
 import com.mapbox.services.geocoding.v5.MapboxGeocoding;
 import com.mapbox.services.geocoding.v5.models.GeocodingFeature;
@@ -35,6 +38,9 @@ public class LocationPickerActivity extends AppCompatActivity {
 
     private MapView mapView;
     private MapboxMap mapboxMap;
+
+    private ImageView dropPinView = null;
+    private Marker resultsPin = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,7 +66,7 @@ public class LocationPickerActivity extends AppCompatActivity {
             }
         });
 
-        final ImageView dropPinView = new ImageView(this);
+        dropPinView = new ImageView(this);
         dropPinView.setImageResource(R.drawable.default_marker);
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
         dropPinView.setLayoutParams(params);
@@ -74,15 +80,21 @@ public class LocationPickerActivity extends AppCompatActivity {
                         Log.i(TAG, "Location Selected!");
                         if (mapboxMap != null) {
                             Log.i(TAG, "dropPinView: height = " + dropPinView.getHeight() + "; width = " + dropPinView.getWidth() + "; left = " + dropPinView.getLeft() + "; bottom = " + dropPinView.getBottom());
-                            int x = dropPinView.getLeft() + (dropPinView.getWidth() / 2);
-                            int y = dropPinView.getBottom();
-                            LatLng latLng = mapboxMap.getProjection().fromScreenLocation(new PointF(x, y));
-                            Log.i(TAG, "location:  x = " + x + "; y = " + y + "; latLng = " + latLng);
+                            float[] coords = getDropPinTipCoordinates();
+                            LatLng latLng = mapboxMap.getProjection().fromScreenLocation(new PointF(coords[0], coords[1]));
+                            Log.i(TAG, "location:  x = " + coords[0] + "; y = " + coords[1] + "; latLng = " + latLng);
                             geocode(latLng);
                         }
                     }
                 }
         );
+    }
+
+    private float[] getDropPinTipCoordinates() {
+        float x = dropPinView.getLeft() + (dropPinView.getWidth() / 2);
+        float y = dropPinView.getBottom();
+
+        return new float[] {x, y};
     }
 
     private void geocode(final LatLng point) {
@@ -101,14 +113,17 @@ public class LocationPickerActivity extends AppCompatActivity {
                     if (results.size() > 0) {
                         String address = results.get(0).getPlaceName();
                         Log.i(TAG, "address " + address);
+                        showAddressPin(address);
                     } else {
                         Log.i(TAG, "No results for search.");
+                        showAddressPin(null);
                     }
                 }
 
                 @Override
                 public void onFailure(Call<GeocodingResponse> call, Throwable t) {
                     Log.e(TAG, "Geocoding Failure: " + t.getMessage());
+                    showAddressPin(null);
                 }
             });
         } catch (ServicesException e) {
@@ -117,6 +132,29 @@ public class LocationPickerActivity extends AppCompatActivity {
         }
     }
 
+    private void showAddressPin(final String address) {
+
+        if (resultsPin != null) {
+            mapboxMap.removeAnnotation(resultsPin);
+        }
+
+        if (TextUtils.isEmpty(address)) {
+            // Set back to search mode
+            resultsPin = null;
+            dropPinView.setVisibility(View.VISIBLE);
+
+            return;
+        }
+
+        dropPinView.setVisibility(View.GONE);
+
+        float[] coords = getDropPinTipCoordinates();
+        LatLng latLng = mapboxMap.getProjection().fromScreenLocation(new PointF(coords[0], coords[1]));
+
+        MarkerOptions markerOptions = new MarkerOptions().title(address).position(latLng);
+        resultsPin = mapboxMap.addMarker(markerOptions);
+        mapboxMap.selectMarker(resultsPin);
+    }
 
     @Override
     public void onResume() {
