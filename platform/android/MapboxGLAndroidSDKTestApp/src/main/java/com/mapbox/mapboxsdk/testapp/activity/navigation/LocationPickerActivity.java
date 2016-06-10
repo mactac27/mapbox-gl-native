@@ -1,7 +1,9 @@
 package com.mapbox.mapboxsdk.testapp.activity.navigation;
 
 import android.graphics.PointF;
+import android.location.Location;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -16,6 +18,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
@@ -66,6 +69,21 @@ public class LocationPickerActivity extends AppCompatActivity {
             @Override
             public void onMapReady(MapboxMap map) {
                 mapboxMap = map;
+                mapboxMap.setMyLocationEnabled(true);
+                mapboxMap.setOnMyLocationChangeListener(new MapboxMap.OnMyLocationChangeListener() {
+                    @Override
+                    public void onMyLocationChange(@Nullable Location location) {
+                        if (location != null) {
+                            mapboxMap.setCameraPosition(new CameraPosition.Builder()
+                                    .target(new LatLng(location))
+                                    .zoom(16)
+                                    .bearing(0)
+                                    .tilt(0)
+                                    .build());
+                            mapboxMap.setOnMyLocationChangeListener(null);
+                        }
+                    }
+                });
             }
         });
 
