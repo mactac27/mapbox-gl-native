@@ -12,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
@@ -41,6 +42,8 @@ public class LocationPickerActivity extends AppCompatActivity {
 
     private ImageView dropPinView = null;
     private Marker resultsPin = null;
+    private Button selectLocationButton = null;
+    private ImageButton clearDisplayViewButton = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,8 +75,8 @@ public class LocationPickerActivity extends AppCompatActivity {
         dropPinView.setLayoutParams(params);
         mapView.addView(dropPinView);
 
-        final Button selectLocation = (Button) findViewById(R.id.selectLocationButton);
-        selectLocation.setOnClickListener(
+        selectLocationButton = (Button) findViewById(R.id.selectLocationButton);
+        selectLocationButton.setOnClickListener(
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -88,6 +91,14 @@ public class LocationPickerActivity extends AppCompatActivity {
                     }
                 }
         );
+
+        clearDisplayViewButton = (ImageButton) findViewById(R.id.clearDisplayViewButton);
+        clearDisplayViewButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showAddressPin(null);
+            }
+        });
     }
 
     private float[] getDropPinTipCoordinates() {
@@ -142,6 +153,8 @@ public class LocationPickerActivity extends AppCompatActivity {
             // Set back to search mode
             resultsPin = null;
             dropPinView.setVisibility(View.VISIBLE);
+            clearDisplayViewButton.setVisibility(View.GONE);
+            selectLocationButton.setClickable(true);
 
             return;
         }
@@ -154,6 +167,9 @@ public class LocationPickerActivity extends AppCompatActivity {
         MarkerOptions markerOptions = new MarkerOptions().title(address).position(latLng);
         resultsPin = mapboxMap.addMarker(markerOptions);
         mapboxMap.selectMarker(resultsPin);
+
+        clearDisplayViewButton.setVisibility(View.VISIBLE);
+        selectLocationButton.setClickable(false);
     }
 
     @Override
