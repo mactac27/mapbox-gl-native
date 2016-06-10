@@ -1,5 +1,6 @@
 package com.mapbox.mapboxsdk.testapp.activity.navigation;
 
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -12,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
@@ -60,6 +62,13 @@ public class LocationPickerActivity extends AppCompatActivity {
                     @Override
                     public void onClick(View v) {
                         Log.i(TAG, "Location Selected!");
+                        if (mapboxMap != null) {
+                            Log.i(TAG, "dropPinView: height = " + dropPinView.getHeight() + "; width = " + dropPinView.getWidth() + "; left = " + dropPinView.getLeft() + "; bottom = " + dropPinView.getBottom());
+                            int x = dropPinView.getLeft() + (dropPinView.getWidth() / 2);
+                            int y = dropPinView.getBottom();
+                            LatLng latLng = mapboxMap.getProjection().fromScreenLocation(new PointF(x, y));
+                            Log.i(TAG, "location:  x = " + x + "; y = " + y + "; latLng = " + latLng);
+                        }
                     }
                 }
         );
