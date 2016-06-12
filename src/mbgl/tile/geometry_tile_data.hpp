@@ -18,7 +18,7 @@ class FeatureIndex;
 
 namespace style {
 class Style;
-}
+} // namespace style
 
 class GeometryTileData : public TileData {
 public:

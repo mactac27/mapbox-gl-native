@@ -15,7 +15,7 @@ namespace {
 static bool getFlag = false;
 static bool setFlag = false;
 
-}; // namespace
+} // namespace
 
 struct MockGLObject {
     using Type = bool;

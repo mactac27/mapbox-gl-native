@@ -8,7 +8,7 @@ class AnnotationManager;
 
 namespace style {
 class UpdateParameters;
-}
+} // namespace style
 
 class AnnotationTileData : public GeometryTileData {
 public:

@@ -10,7 +10,7 @@ class GeometryTile;
 
 namespace style {
 class UpdateParameters;
-}
+} // namespace style
 
 class VectorTileData : public GeometryTileData {
 public:
