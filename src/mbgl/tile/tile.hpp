@@ -11,7 +11,7 @@ class TileData;
 
 class Tile {
 public:
-    Tile(const UnwrappedTileID& id_, TileData& data_) : id(id_), data(data_) {
+    Tile(UnwrappedTileID id_, TileData& data_) : id(std::move(id_)), data(data_) {
     }
 
     Tile(const Tile&) = delete;

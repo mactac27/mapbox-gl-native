@@ -7,8 +7,8 @@ namespace mbgl {
 
 static TileDataObserver nullObserver;
 
-TileData::TileData(const OverscaledTileID& id_)
-    : id(id_), observer(&nullObserver) {
+TileData::TileData(OverscaledTileID id_)
+    : id(std::move(id_)), observer(&nullObserver) {
 }
 
 TileData::~TileData() = default;
