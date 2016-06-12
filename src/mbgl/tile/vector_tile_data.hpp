@@ -18,7 +18,7 @@ public:
                    std::string sourceID,
                    const style::UpdateParameters&,
                    const Tileset&);
-    ~VectorTileData();
+    ~VectorTileData() override;
 
     void setNecessity(Necessity) final;
 

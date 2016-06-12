@@ -20,7 +20,7 @@ public:
                    std::string sourceID,
                    const style::UpdateParameters&,
                    mapbox::geojsonvt::GeoJSONVT*);
-    ~GeoJSONTileData();
+    ~GeoJSONTileData() override;
 
     void setNecessity(Necessity) final;
 };

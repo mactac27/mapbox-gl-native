@@ -21,7 +21,7 @@ public:
     RasterTileData(const OverscaledTileID&,
                    const style::UpdateParameters&,
                    const Tileset&);
-    ~RasterTileData();
+    ~RasterTileData() override;
 
     void setNecessity(Necessity) final;
 

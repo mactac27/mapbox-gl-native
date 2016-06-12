@@ -15,7 +15,7 @@ public:
     AnnotationTileData(const OverscaledTileID&,
                        std::string sourceID,
                        const style::UpdateParameters&);
-    ~AnnotationTileData();
+    ~AnnotationTileData() override;
 
     void setNecessity(Necessity) final;
 
